@@ -1,0 +1,479 @@
+{
+  "users": [
+    {
+      "id": "usr_maya",
+      "name": "Maya Okello",
+      "username": "mayamakes",
+      "email": "maya@example.com",
+      "passwordHash": "demo_admin_salt_2026:340a6d7ab994c4dff6e8635c2131cd93fb6d96bc4800af6c2be23387ec387bd48310df4044bf6707910566d3af3bad781612d9c3e47736a65c03f15a90dbd7b6",
+      "bio": "Visual storyteller sharing brand identity breakdowns, behind-the-scenes sketches, and Nairobi cafe work sessions.",
+      "niche": "Design",
+      "website": "https://example.com/maya",
+      "avatar": "https://api.dicebear.com/8.x/adventurer/svg?seed=Maya",
+      "banner": "linear-gradient(135deg,#7c3aed,#ec4899)",
+      "followers": [
+        "usr_zuri",
+        "usr_leo"
+      ],
+      "following": [
+        "usr_zuri"
+      ],
+      "friends": [
+        "usr_zuri"
+      ],
+      "blockedUsers": [],
+      "mutedUsers": [],
+      "isAdmin": true,
+      "suspended": false,
+      "referralCode": "MAYA2026",
+      "savedPosts": [
+        "post_3"
+      ],
+      "settings": {
+        "defaultPostVisibility": "public",
+        "allowMessagesFrom": "everyone",
+        "profileDiscoverable": true,
+        "notifyLikes": true,
+        "notifyComments": true,
+        "notifyFollows": true,
+        "notifyFriendRequests": true,
+        "notifyMessages": true,
+        "notifyMentions": true
+      },
+      "createdAt": "2026-05-13T20:31:39.144Z",
+      "emailVerified": true,
+      "roles": [
+        "owner",
+        "admin",
+        "moderator",
+        "user"
+      ]
+    },
+    {
+      "id": "usr_zuri",
+      "name": "Zuri Beats",
+      "username": "zuribeats",
+      "email": "zuri@example.com",
+      "passwordHash": "demo_zuri_salt_2026:be96796e0da950a6f75264df5fe5948fd2d4c6117286c2446dab252c566e9462f8bcacc69727e981f83a3e707717b23005058584b34f64aa56c7fc54a0aa6454",
+      "bio": "Producer. Sharing loops, breakdowns, plug-in chains, and creative challenges for bedroom musicians.",
+      "niche": "Music",
+      "website": "https://example.com/zuri",
+      "avatar": "https://api.dicebear.com/8.x/adventurer/svg?seed=Zuri",
+      "banner": "linear-gradient(135deg,#06b6d4,#3b82f6)",
+      "followers": [
+        "usr_maya"
+      ],
+      "following": [
+        "usr_maya",
+        "usr_leo"
+      ],
+      "friends": [
+        "usr_maya"
+      ],
+      "blockedUsers": [],
+      "mutedUsers": [],
+      "isAdmin": false,
+      "suspended": false,
+      "referralCode": "ZURI2026",
+      "savedPosts": [
+        "post_1"
+      ],
+      "settings": {
+        "defaultPostVisibility": "public",
+        "allowMessagesFrom": "everyone",
+        "profileDiscoverable": true,
+        "notifyLikes": true,
+        "notifyComments": true,
+        "notifyFollows": true,
+        "notifyFriendRequests": true,
+        "notifyMessages": true,
+        "notifyMentions": true
+      },
+      "createdAt": "2026-05-28T20:31:39.144Z",
+      "emailVerified": true,
+      "roles": [
+        "user"
+      ]
+    },
+    {
+      "id": "usr_leo",
+      "name": "Leo Frames",
+      "username": "leoframes",
+      "email": "leo@example.com",
+      "passwordHash": "demo_leo_salt_2026:236e6ad4bde465442d9f78ad86ec85854f157c18307cb61d33855a5bee7b0c319d3bedeeb1e8abb6e61b14a56c8692c1b65c59cf30ba41f68a8f6af9021b29d8",
+      "bio": "Street photographer publishing weekly photo walks, editing recipes, and print drops.",
+      "niche": "Photography",
+      "website": "https://example.com/leo",
+      "avatar": "https://api.dicebear.com/8.x/adventurer/svg?seed=Leo",
+      "banner": "linear-gradient(135deg,#f97316,#ef4444)",
+      "followers": [
+        "usr_zuri"
+      ],
+      "following": [
+        "usr_maya"
+      ],
+      "friends": [],
+      "blockedUsers": [],
+      "mutedUsers": [],
+      "isAdmin": false,
+      "suspended": false,
+      "referralCode": "LEO2026",
+      "savedPosts": [],
+      "settings": {
+        "defaultPostVisibility": "public",
+        "allowMessagesFrom": "everyone",
+        "profileDiscoverable": true,
+        "notifyLikes": true,
+        "notifyComments": true,
+        "notifyFollows": true,
+        "notifyFriendRequests": true,
+        "notifyMessages": true,
+        "notifyMentions": true
+      },
+      "createdAt": "2026-06-22T20:31:39.144Z",
+      "emailVerified": true,
+      "roles": [
+        "user"
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "id": "post_1",
+      "authorId": "usr_maya",
+      "body": "Just finished a 3-page visual identity system for a coffee roaster. My favorite exercise: defining what the brand should NEVER look like before touching colors.",
+      "imageUrl": "",
+      "tags": [
+        "branding",
+        "design",
+        "process"
+      ],
+      "visibility": "public",
+      "likes": [
+        "usr_zuri",
+        "usr_leo"
+      ],
+      "reactions": {
+        "love": [
+          "usr_zuri"
+        ],
+        "wow": [
+          "usr_leo"
+        ]
+      },
+      "shares": 2,
+      "comments": [
+        {
+          "id": "c1",
+          "userId": "usr_zuri",
+          "text": "That negative-space rule is underrated.",
+          "likes": [
+            "usr_maya"
+          ],
+          "createdAt": "2026-08-09T20:31:39.144Z"
+        },
+        {
+          "id": "c1_reply",
+          "userId": "usr_maya",
+          "text": "Exactly \u2014 constraints make the direction clearer.",
+          "parentId": "c1",
+          "likes": [],
+          "createdAt": "2026-08-10T20:31:39.144Z"
+        }
+      ],
+      "createdAt": "2026-08-08T20:31:39.144Z"
+    },
+    {
+      "id": "post_2",
+      "authorId": "usr_zuri",
+      "body": "Creator challenge: make an 8-bar loop using only sounds recorded in your kitchen. Drop your weirdest sample idea below.",
+      "imageUrl": "",
+      "poll": {
+        "question": "Which sample should lead the challenge pack?",
+        "allowMultiple": false,
+        "options": [
+          {
+            "id": "opt_cups",
+            "text": "Coffee cup taps",
+            "votes": [
+              "usr_maya"
+            ]
+          },
+          {
+            "id": "opt_fridge",
+            "text": "Fridge hum bass",
+            "votes": []
+          },
+          {
+            "id": "opt_spoon",
+            "text": "Spoon percussion",
+            "votes": [
+              "usr_leo"
+            ]
+          }
+        ]
+      },
+      "tags": [
+        "music",
+        "challenge",
+        "samples"
+      ],
+      "visibility": "public",
+      "likes": [
+        "usr_maya"
+      ],
+      "reactions": {
+        "haha": [
+          "usr_maya"
+        ]
+      },
+      "shares": 1,
+      "comments": [],
+      "createdAt": "2026-08-09T20:31:39.144Z"
+    },
+    {
+      "id": "post_3",
+      "authorId": "usr_leo",
+      "body": "Golden hour is nice, but rainy reflections after sunset are the real cheat code for city photos.",
+      "imageUrl": "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80",
+      "tags": [
+        "photography",
+        "street",
+        "tips"
+      ],
+      "visibility": "public",
+      "likes": [
+        "usr_maya",
+        "usr_zuri"
+      ],
+      "reactions": {
+        "love": [
+          "usr_maya"
+        ],
+        "wow": [
+          "usr_zuri"
+        ]
+      },
+      "shares": 3,
+      "comments": [
+        {
+          "id": "c2",
+          "userId": "usr_maya",
+          "text": "The mood in this is perfect.",
+          "likes": [
+            "usr_leo"
+          ],
+          "createdAt": "2026-08-10T20:31:39.144Z"
+        }
+      ],
+      "createdAt": "2026-08-10T20:31:39.144Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif_1",
+      "recipientId": "usr_maya",
+      "actorId": "usr_zuri",
+      "type": "comment",
+      "postId": "post_1",
+      "commentId": "c1",
+      "read": false,
+      "createdAt": "2026-08-09T20:31:39.144Z"
+    },
+    {
+      "id": "notif_2",
+      "recipientId": "usr_leo",
+      "actorId": "usr_maya",
+      "type": "comment",
+      "postId": "post_3",
+      "commentId": "c2",
+      "read": false,
+      "createdAt": "2026-08-10T20:31:39.144Z"
+    },
+    {
+      "id": "notif_3",
+      "recipientId": "usr_maya",
+      "actorId": "usr_leo",
+      "type": "like",
+      "postId": "post_1",
+      "read": true,
+      "createdAt": "2026-08-09T20:31:39.144Z"
+    }
+  ],
+  "conversations": [],
+  "reports": [],
+  "stories": [
+    {
+      "id": "story_1",
+      "authorId": "usr_maya",
+      "body": "Moodboard day \u2728",
+      "imageUrl": "",
+      "views": [],
+      "createdAt": "2026-08-11T20:31:39.144Z",
+      "expiresAt": "2026-08-12T20:31:39.144Z"
+    },
+    {
+      "id": "story_2",
+      "authorId": "usr_zuri",
+      "body": "New beat preview tonight",
+      "imageUrl": "",
+      "views": [],
+      "createdAt": "2026-08-11T20:31:39.144Z",
+      "expiresAt": "2026-08-12T20:31:39.144Z"
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_design",
+      "name": "Design Circle",
+      "description": "Feedback, critiques, resources, and creative briefs for designers.",
+      "cover": "linear-gradient(135deg,#7c3aed,#ec4899)",
+      "ownerId": "usr_maya",
+      "memberIds": [
+        "usr_maya",
+        "usr_zuri"
+      ],
+      "createdAt": "2026-07-22T20:31:39.144Z"
+    },
+    {
+      "id": "grp_audio",
+      "name": "Bedroom Producers",
+      "description": "Loops, plugins, mix notes, and weekly music challenges.",
+      "cover": "linear-gradient(135deg,#06b6d4,#3b82f6)",
+      "ownerId": "usr_zuri",
+      "memberIds": [
+        "usr_zuri"
+      ],
+      "createdAt": "2026-07-24T20:31:39.144Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_walk",
+      "title": "Nairobi Creator Walk",
+      "description": "A casual photo/design/audio inspiration walk with creators.",
+      "location": "Nairobi CBD",
+      "startsAt": "2026-08-17T20:31:39.144Z",
+      "hostId": "usr_leo",
+      "attendeeIds": [
+        "usr_leo",
+        "usr_maya"
+      ],
+      "cover": "linear-gradient(135deg,#f97316,#ef4444)",
+      "createdAt": "2026-08-06T20:31:39.144Z"
+    }
+  ],
+  "friendRequests": [
+    {
+      "id": "fr_1",
+      "senderId": "usr_leo",
+      "recipientId": "usr_maya",
+      "status": "pending",
+      "createdAt": "2026-08-10T20:31:39.144Z"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "chl_weekly",
+      "title": "Weekly Creator Sprint",
+      "description": "Create a post, image, beat, photo, or design around the theme and let the community vote.",
+      "theme": "Behind the process",
+      "prize": "Featured on Explore + Creator Sprint badge",
+      "startsAt": "2026-08-10T20:31:39.144Z",
+      "endsAt": "2026-08-17T20:31:39.144Z",
+      "hostId": "usr_maya",
+      "createdAt": "2026-08-10T20:31:39.144Z"
+    }
+  ],
+  "challengeEntries": [
+    {
+      "id": "entry_1",
+      "challengeId": "chl_weekly",
+      "authorId": "usr_maya",
+      "title": "Brand board breakdown",
+      "body": "A quick breakdown of how I turn messy notes into a visual direction.",
+      "imageUrl": "",
+      "votes": [
+        "usr_zuri"
+      ],
+      "createdAt": "2026-08-11T20:31:39.144Z"
+    },
+    {
+      "id": "entry_2",
+      "challengeId": "chl_weekly",
+      "authorId": "usr_zuri",
+      "title": "Kitchen sample loop",
+      "body": "A beat made with coffee cup taps, fridge hum, and a spoon hit.",
+      "imageUrl": "",
+      "votes": [
+        "usr_maya",
+        "usr_leo"
+      ],
+      "createdAt": "2026-08-11T20:31:39.144Z"
+    }
+  ],
+  "marketplaceListings": [
+    {
+      "id": "lst_brand",
+      "sellerId": "usr_maya",
+      "title": "Brand identity mini-audit",
+      "description": "I will review your creator brand visuals and send a concise improvement plan.",
+      "type": "service",
+      "category": "Design",
+      "price": 35,
+      "currency": "USD",
+      "imageUrl": "",
+      "tags": [
+        "branding",
+        "design",
+        "audit"
+      ],
+      "saves": [
+        "usr_zuri"
+      ],
+      "active": true,
+      "createdAt": "2026-08-07T20:31:39.144Z"
+    },
+    {
+      "id": "lst_loops",
+      "sellerId": "usr_zuri",
+      "title": "Afro-electronic loop pack",
+      "description": "A royalty-free starter loop pack for reels, intros, and demos.",
+      "type": "digital_product",
+      "category": "Music",
+      "price": 12,
+      "currency": "USD",
+      "imageUrl": "",
+      "tags": [
+        "music",
+        "loops",
+        "samples"
+      ],
+      "saves": [],
+      "active": true,
+      "createdAt": "2026-08-08T20:31:39.144Z"
+    },
+    {
+      "id": "lst_photo",
+      "sellerId": "usr_leo",
+      "title": "Creator portrait session",
+      "description": "A short outdoor portrait session for profile photos and promo content.",
+      "type": "service",
+      "category": "Photography",
+      "price": 80,
+      "currency": "USD",
+      "imageUrl": "",
+      "tags": [
+        "photography",
+        "portraits"
+      ],
+      "saves": [
+        "usr_maya"
+      ],
+      "active": true,
+      "createdAt": "2026-08-09T20:31:39.144Z"
+    }
+  ],
+  "marketplaceInquiries": [],
+  "referrals": []
+}

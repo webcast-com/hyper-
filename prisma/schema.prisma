@@ -1,0 +1,509 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id
+  name         String
+  username     String   @unique
+  email        String   @unique
+  emailVerified Boolean @default(false)
+  passwordHash String
+  bio          String
+  niche        String
+  website      String?
+  avatar       String
+  banner       String
+
+  followers    String   @default("[]") // JSON array of user ids
+  following    String   @default("[]") // JSON array of user ids
+  friends      String   @default("[]") // JSON array of user ids
+  blockedUsers String   @default("[]") // JSON array of user ids
+  mutedUsers   String   @default("[]") // JSON array of user ids
+  savedPosts   String   @default("[]") // JSON array of post ids
+  settings     String   @default("{}") // JSON UserSettings
+
+  isAdmin      Boolean  @default(false)
+  roles        String   @default("[\"user\"]") // JSON Role[]
+  suspended    Boolean  @default(false)
+  referralCode String   @unique
+  createdAt    DateTime @default(now())
+
+  posts               Post[]
+  comments            Comment[]
+  stories             Story[]
+  ownedGroups         Group[]              @relation("OwnedGroups")
+  hostedEvents        Event[]              @relation("HostedEvents")
+  hostedChallenges    Challenge[]          @relation("HostedChallenges")
+  challengeEntries    ChallengeEntry[]
+  marketplaceListings MarketplaceListing[]
+  buyerInquiries      MarketplaceInquiry[] @relation("BuyerInquiries")
+  sellerInquiries     MarketplaceInquiry[] @relation("SellerInquiries")
+  sentMessages        Message[]            @relation("SentMessages")
+  receivedMessages    Message[]            @relation("ReceivedMessages")
+  notificationsIn     Notification[]       @relation("RecipientNotifications")
+  notificationsOut    Notification[]       @relation("ActorNotifications")
+  reports             Report[]
+  referralsSent       Referral[]           @relation("InviterReferrals")
+  referralsReceived   Referral[]           @relation("InvitedReferrals")
+  mediaAssets         MediaAsset[]
+  authTokens          AuthToken[]
+
+  @@index([username])
+  @@index([email])
+  @@index([referralCode])
+}
+
+model Post {
+  id         String   @id
+  authorId   String
+  groupId    String?
+  eventId    String?
+  body       String
+  imageUrl   String?
+  poll       String?  // JSON Poll
+  tags       String   @default("[]") // JSON string[]
+  visibility String   @default("public")
+  likes      String   @default("[]") // JSON user ids
+  reactions  String   @default("{}") // JSON reaction map
+  shares     Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  group         Group?         @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  event         Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  comments      Comment[]
+  notifications Notification[]
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model Comment {
+  id        String   @id
+  postId    String
+  userId    String
+  parentId  String?
+  text      String
+  likes     String   @default("[]") // JSON user ids
+  createdAt DateTime @default(now())
+
+  post   Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model Notification {
+  id          String   @id
+  recipientId String
+  actorId     String
+  type        String
+  postId      String?
+  commentId   String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  recipient User @relation("RecipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId])
+  @@index([actorId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model Conversation {
+  id             String   @id
+  participantIds String   // JSON user ids
+  updatedAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  messages Message[]
+
+  @@index([updatedAt])
+}
+
+model Message {
+  id             String   @id
+  conversationId String
+  senderId       String
+  recipientId    String
+  text           String
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient    User         @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([read])
+}
+
+model Story {
+  id        String   @id
+  authorId  String
+  body      String
+  imageUrl  String?
+  views     String   @default("[]") // JSON user ids
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([expiresAt])
+}
+
+model Group {
+  id          String   @id
+  name        String
+  description String
+  cover       String
+  ownerId     String
+  memberIds   String   @default("[]") // JSON user ids
+  createdAt   DateTime @default(now())
+
+  owner User   @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  posts Post[]
+
+  @@index([ownerId])
+}
+
+model Event {
+  id          String   @id
+  title       String
+  description String
+  location    String
+  startsAt    DateTime
+  hostId      String
+  attendeeIds String   @default("[]") // JSON user ids
+  cover       String
+  createdAt   DateTime @default(now())
+
+  host  User   @relation("HostedEvents", fields: [hostId], references: [id], onDelete: Cascade)
+  posts Post[]
+
+  @@index([hostId])
+  @@index([startsAt])
+}
+
+model Challenge {
+  id          String   @id
+  title       String
+  description String
+  theme       String
+  prize       String
+  startsAt    DateTime
+  endsAt      DateTime
+  hostId      String
+  createdAt   DateTime @default(now())
+
+  host    User             @relation("HostedChallenges", fields: [hostId], references: [id], onDelete: Cascade)
+  entries ChallengeEntry[]
+
+  @@index([hostId])
+  @@index([endsAt])
+}
+
+model ChallengeEntry {
+  id          String   @id
+  challengeId String
+  authorId    String
+  title       String
+  body        String
+  imageUrl    String?
+  votes       String   @default("[]") // JSON user ids
+  createdAt   DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+  @@index([authorId])
+}
+
+model MarketplaceListing {
+  id          String   @id
+  sellerId    String
+  title       String
+  description String
+  type        String
+  category    String
+  price       Float
+  currency    String
+  imageUrl    String?
+  tags        String   @default("[]") // JSON string[]
+  saves       String   @default("[]") // JSON user ids
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  seller    User                 @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  inquiries MarketplaceInquiry[]
+
+  @@index([sellerId])
+  @@index([category])
+  @@index([type])
+  @@index([active])
+}
+
+model MarketplaceInquiry {
+  id        String   @id
+  listingId String
+  buyerId   String
+  sellerId  String
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer   User               @relation("BuyerInquiries", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller  User               @relation("SellerInquiries", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model FriendRequest {
+  id          String   @id
+  senderId    String
+  recipientId String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([status])
+}
+
+model Report {
+  id         String   @id
+  reporterId String
+  targetType String
+  targetId   String
+  reason     String
+  details    String
+  status     String   @default("open")
+  createdAt  DateTime @default(now())
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([status])
+}
+
+model Referral {
+  id            String   @id
+  inviterId     String
+  invitedUserId String
+  code          String
+  createdAt     DateTime @default(now())
+
+  inviter     User @relation("InviterReferrals", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitedUser User @relation("InvitedReferrals", fields: [invitedUserId], references: [id], onDelete: Cascade)
+
+  @@index([inviterId])
+  @@index([invitedUserId])
+  @@index([code])
+}
+
+model MediaAsset {
+  id        String   @id
+  ownerId   String
+  url       String
+  provider  String
+  filename  String
+  mimeType  String
+  size      Int
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([provider])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id
+  actorId   String?
+  action    String
+  targetType String?
+  targetId   String?
+  metadata  String   @default("{}")
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType])
+  @@index([createdAt])
+}
+
+model AuthToken {
+  id        String   @id
+  userId    String
+  type      String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([expiresAt])
+}
+
+model WebhookEndpoint {
+  id          String   @id
+  url         String
+  description String
+  secret      String
+  events      String   @default("[]") // JSON event names, empty means all
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([active])
+  @@index([createdAt])
+}
+
+model WebhookDelivery {
+  id          String   @id
+  endpointId  String
+  event       String
+  payload     String
+  status      String   @default("pending")
+  statusCode  Int?
+  response    String?
+  attempts    Int      @default(0)
+  nextAttemptAt DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId])
+  @@index([event])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FeatureFlag {
+  key       String   @id
+  enabled   Boolean  @default(true)
+  description String?
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([enabled])
+}
+
+model ModerationRule {
+  id          String   @id
+  phrase      String
+  targetTypes String   @default("[]") // JSON target types; empty means all
+  action      String   @default("flag") // flag | block
+  active      Boolean  @default(true)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  flags ModerationFlag[]
+
+  @@index([active])
+  @@index([action])
+}
+
+model ModerationFlag {
+  id         String   @id
+  ruleId     String?
+  targetType String
+  targetId   String
+  actorId    String?
+  excerpt    String
+  status     String   @default("open") // open | reviewed | dismissed
+  createdAt  DateTime @default(now())
+
+  rule ModerationRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  @@index([targetType])
+  @@index([targetId])
+  @@index([actorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model NotificationDigest {
+  id        String   @id
+  userId    String
+  frequency String
+  subject   String
+  itemCount Int
+  status    String   @default("pending") // pending | sent | failed
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([frequency])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AdminMetricSnapshot {
+  id        String   @id
+  date      String   @unique
+  metrics   String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model AdminAlert {
+  id        String   @id
+  type      String
+  severity  String   @default("info") // info | warning | critical
+  title     String
+  message   String
+  status    String   @default("open") // open | acknowledged | resolved
+  source    String?
+  metadata  String   @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  @@index([type])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+}
