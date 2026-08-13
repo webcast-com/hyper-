@@ -1,0 +1,209 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Creator Connect API",
+    "version": "1.0.0",
+    "description": "API contract for Creator Connect, a creator-focused social media platform with posts, messaging, marketplace, challenges, moderation, and admin operations."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local development, unversioned" },
+    { "url": "http://localhost:3000/api/v1", "description": "Local development, versioned API base for clients" }
+  ],
+  "tags": [
+    { "name": "Auth" },
+    { "name": "Posts" },
+    { "name": "Social Graph" },
+    { "name": "Messages" },
+    { "name": "Discovery" },
+    { "name": "Marketplace" },
+    { "name": "Communities" },
+    { "name": "Challenges" },
+    { "name": "Account" },
+    { "name": "Admin" },
+    { "name": "System" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "creator_session"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        },
+        "required": ["error"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "bio": { "type": "string" },
+          "niche": { "type": "string" },
+          "website": { "type": "string" },
+          "avatar": { "type": "string" },
+          "banner": { "type": "string" },
+          "roles": { "type": "array", "items": { "type": "string", "enum": ["user", "moderator", "admin", "owner"] } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "username"]
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "authorId": { "type": "string" },
+          "body": { "type": "string" },
+          "imageUrl": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "visibility": { "type": "string", "enum": ["public", "followers", "friends", "only_me"] },
+          "likes": { "type": "array", "items": { "type": "string" } },
+          "shares": { "type": "integer" },
+          "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } },
+          "author": { "$ref": "#/components/schemas/User" }
+        },
+        "required": ["id", "authorId", "body", "visibility"]
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "text": { "type": "string" },
+          "parentId": { "type": "string" },
+          "likes": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "text"]
+      },
+      "MarketplaceListing": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "sellerId": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string", "enum": ["service", "digital_product", "collaboration"] },
+          "category": { "type": "string" },
+          "price": { "type": "number" },
+          "currency": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "seller": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "Challenge": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "theme": { "type": "string" },
+          "prize": { "type": "string" },
+          "entryCount": { "type": "integer" },
+          "voteCount": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "GenericOk": {
+        "type": "object",
+        "properties": { "ok": { "type": "boolean" } },
+        "required": ["ok"]
+      }
+    },
+    "responses": {
+      "Unauthorized": { "description": "Authentication required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "Permission denied", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "ValidationError": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "responses": { "200": { "description": "Healthy" }, "503": { "description": "Unhealthy" } }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["name", "email", "password"], "properties": { "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "password": { "type": "string", "minLength": 6 }, "niche": { "type": "string" }, "inviteCode": { "type": "string" } } } } } },
+        "responses": { "201": { "description": "Registered" }, "400": { "$ref": "#/components/responses/ValidationError" } }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login and set session cookie",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Logged in" }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/api/auth/me": {
+      "get": { "tags": ["Auth"], "summary": "Current session user", "responses": { "200": { "description": "Current user or null" } } }
+    },
+    "/api/auth/forgot-password": {
+      "post": { "tags": ["Auth"], "summary": "Request password reset email", "responses": { "200": { "description": "Reset email accepted" } } }
+    },
+    "/api/auth/reset-password": {
+      "post": { "tags": ["Auth"], "summary": "Reset password with token", "responses": { "200": { "description": "Password reset" }, "400": { "$ref": "#/components/responses/ValidationError" } } }
+    },
+    "/api/auth/verify-email": {
+      "post": { "tags": ["Auth"], "summary": "Verify email with token", "responses": { "200": { "description": "Email verified" }, "400": { "$ref": "#/components/responses/ValidationError" } } }
+    },
+    "/api/posts": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "List feed posts",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 8 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "feed", "in": "query", "schema": { "type": "string", "enum": ["latest", "trending", "following", "friends", "communities"] } }
+        ],
+        "responses": { "200": { "description": "Feed page" } }
+      },
+      "post": {
+        "tags": ["Posts"],
+        "security": [{ "cookieAuth": [] }],
+        "summary": "Create a post",
+        "responses": { "201": { "description": "Created post" }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/api/posts/{id}/like": { "post": { "tags": ["Posts"], "summary": "Toggle post like", "security": [{ "cookieAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Updated post" } } } },
+    "/api/posts/{id}/comments": { "post": { "tags": ["Posts"], "summary": "Create comment or reply", "security": [{ "cookieAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "201": { "description": "Created comment" } } } },
+    "/api/discover": { "get": { "tags": ["Discovery"], "summary": "Discover creators", "responses": { "200": { "description": "Creator list" } } } },
+    "/api/search": { "get": { "tags": ["Discovery"], "summary": "Search users and posts", "parameters": [{ "name": "q", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "Search results" } } } },
+    "/api/explore": { "get": { "tags": ["Discovery"], "summary": "Explore/trending data", "responses": { "200": { "description": "Explore data" } } } },
+    "/api/messages": { "get": { "tags": ["Messages"], "security": [{ "cookieAuth": [] }], "summary": "List conversations", "responses": { "200": { "description": "Conversation list" } } }, "post": { "tags": ["Messages"], "security": [{ "cookieAuth": [] }], "summary": "Send message", "responses": { "201": { "description": "Message sent" } } } },
+    "/api/messages/unread": { "get": { "tags": ["Messages"], "security": [{ "cookieAuth": [] }], "summary": "Unread message count", "responses": { "200": { "description": "Unread count" } } } },
+    "/api/marketplace": { "get": { "tags": ["Marketplace"], "summary": "List marketplace listings", "responses": { "200": { "description": "Listings" } } }, "post": { "tags": ["Marketplace"], "security": [{ "cookieAuth": [] }], "summary": "Create marketplace listing", "responses": { "201": { "description": "Listing created" } } } },
+    "/api/challenges": { "get": { "tags": ["Challenges"], "summary": "List challenges", "responses": { "200": { "description": "Challenges" } } }, "post": { "tags": ["Challenges"], "security": [{ "cookieAuth": [] }], "summary": "Create challenge", "responses": { "201": { "description": "Challenge created" } } } },
+    "/api/groups": { "get": { "tags": ["Communities"], "summary": "List groups", "responses": { "200": { "description": "Groups" } } }, "post": { "tags": ["Communities"], "security": [{ "cookieAuth": [] }], "summary": "Create group", "responses": { "201": { "description": "Group created" } } } },
+    "/api/events": { "get": { "tags": ["Communities"], "summary": "List events", "responses": { "200": { "description": "Events" } } }, "post": { "tags": ["Communities"], "security": [{ "cookieAuth": [] }], "summary": "Create event", "responses": { "201": { "description": "Event created" } } } },
+    "/api/settings": { "get": { "tags": ["Account"], "security": [{ "cookieAuth": [] }], "summary": "Get settings", "responses": { "200": { "description": "Settings" } } }, "patch": { "tags": ["Account"], "security": [{ "cookieAuth": [] }], "summary": "Update settings", "responses": { "200": { "description": "Updated settings" } } } },
+    "/api/upload": { "post": { "tags": ["Account"], "security": [{ "cookieAuth": [] }], "summary": "Upload media", "responses": { "201": { "description": "Uploaded media" } } } },
+    "/api/admin/reports": { "get": { "tags": ["Admin"], "security": [{ "cookieAuth": [] }], "summary": "Admin reports queue", "responses": { "200": { "description": "Reports and stats" }, "403": { "$ref": "#/components/responses/Forbidden" } } } },
+    "/api/admin/audit-log": { "get": { "tags": ["Admin"], "security": [{ "cookieAuth": [] }], "summary": "Audit log", "responses": { "200": { "description": "Audit logs" }, "403": { "$ref": "#/components/responses/Forbidden" } } } },
+    "/api/admin/system-health": { "get": { "tags": ["Admin"], "security": [{ "cookieAuth": [] }], "summary": "System diagnostics", "responses": { "200": { "description": "System health" }, "403": { "$ref": "#/components/responses/Forbidden" } } } },
+    "/api/admin/maintenance": { "post": { "tags": ["Admin"], "summary": "Run maintenance job", "responses": { "200": { "description": "Maintenance result" }, "403": { "$ref": "#/components/responses/Forbidden" } } } }
+  }
+}

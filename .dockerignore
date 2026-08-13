@@ -1,0 +1,13 @@
+.next
+node_modules
+.env
+.env.*
+!.env.example
+data/db.json
+public/uploads
+coverage
+.git
+.gitignore
+README.md
+INTEGRATION_AUDIT.md
+*.log
