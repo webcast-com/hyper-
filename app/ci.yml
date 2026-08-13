@@ -1,0 +1,84 @@
+name: Creator Connect CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./dev.db
+      DATA_DRIVER: prisma
+      SESSION_SECRET: ci-session-secret-change-me
+      CRON_SECRET: ci-cron-secret-change-me
+      MEDIA_PROVIDER: local
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Prisma SQLite schema
+        run: npm run prisma:validate
+
+      - name: Validate Prisma Postgres schema
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+        run: npm run prisma:validate:postgres
+
+      - name: Setup Prisma SQLite database
+        run: npm run db:setup
+
+      - name: Check operational scripts
+        run: npm run scripts:check
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Validate OpenAPI spec
+        run: npm run openapi:validate
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start production server
+        run: |
+          npm start > /tmp/creator-connect.log 2>&1 &
+          echo $! > /tmp/creator-connect.pid
+
+      - name: Smoke test production server
+        env:
+          APP_URL: http://localhost:3000
+        run: npm run smoke
+
+      - name: Print server logs on failure
+        if: failure()
+        run: cat /tmp/creator-connect.log || true
+
+      - name: Stop production server
+        if: always()
+        run: kill $(cat /tmp/creator-connect.pid) 2>/dev/null || true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./dev.db
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t creator-connect:ci .
