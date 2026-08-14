@@ -57,20 +57,45 @@ export function parseSession(token?: string) {
   }
 }
 
+/**
+ * Session cookie attributes.
+ *
+ * Default is `SameSite=Lax`, which is also this app's CSRF defence (there are no
+ * CSRF tokens), so it must stay the default in production.
+ *
+ * When the app is served inside a cross-site iframe — e.g. the hosted HTTPS dev
+ * preview — a `Lax` cookie is never sent back by the browser, so the user appears
+ * to be logged out again immediately after signing in. Setting
+ * `CROSS_SITE_COOKIES="true"` switches to `SameSite=None; Secure`, which browsers
+ * require for cookies in a third-party context. Only enable it when the app is
+ * served over HTTPS and framed by a trusted origin.
+ */
+function sessionCookieOptions() {
+  const crossSite = process.env.CROSS_SITE_COOKIES === "true";
+  return {
+    httpOnly: true,
+    // SameSite=None is only honoured by browsers when the cookie is also Secure.
+    sameSite: crossSite ? ("none" as const) : ("lax" as const),
+    secure: crossSite || process.env.NODE_ENV === "production",
+    path: "/"
+  };
+}
+
 export async function setSessionCookie(userId: string) {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, makeSession(userId), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: ONE_WEEK,
-    path: "/"
+    ...sessionCookieOptions(),
+    maxAge: ONE_WEEK
   });
 }
 
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, "", { maxAge: 0, path: "/" });
+  // Must match the attributes used when setting, or the browser keeps the original cookie.
+  cookieStore.set(COOKIE_NAME, "", {
+    ...sessionCookieOptions(),
+    maxAge: 0
+  });
 }
 
 export async function getCurrentUser(): Promise<User | null> {
