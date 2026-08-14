@@ -10,7 +10,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV DATABASE_URL="postgresql://creator:creator_password_change_me@postgres:5432/creator_connect?schema=public"
-RUN npx prisma generate --schema prisma/schema.postgres.prisma
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine AS runner

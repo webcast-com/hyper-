@@ -67,8 +67,8 @@ npm run migrate:deploy
 
 This project keeps two Prisma schemas:
 
-- `prisma/schema.prisma` — SQLite/local schema used for lightweight development and CI.
-- `prisma/schema.postgres.prisma` — Postgres production schema.
+- `prisma/schema.prisma` — Postgres schema. This is the default schema used by `prisma generate`, `prisma migrate deploy`, and all deploys.
+- `prisma/schema.sqlite.prisma` — optional SQLite schema for lightweight local development only (never used in deploys).
 
 The initial Postgres migration is stored in:
 
@@ -86,7 +86,7 @@ For future production schema changes:
 Example with a dev Postgres database:
 
 ```bash
-DATABASE_URL="postgresql://..." npx prisma migrate dev --schema prisma/schema.postgres.prisma --name your_change
+DATABASE_URL="postgresql://..." npx prisma migrate dev --name your_change
 ```
 
 

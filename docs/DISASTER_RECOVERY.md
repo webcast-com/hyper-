@@ -47,7 +47,7 @@ By default, JSON exports redact password hashes and auth tokens.
 For non-production/local restore:
 
 ```bash
-DATABASE_URL="file:./dev.db" npm run data:import -- backups/export.json
+DATABASE_URL="postgresql://creator:creator_password_change_me@localhost:5432/creator_connect?schema=public" npm run data:import -- backups/export.json
 ```
 
 For production restore, explicit confirmation is required:
