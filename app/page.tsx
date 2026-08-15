@@ -102,11 +102,15 @@ const api = async <T,>(url: string, options?: RequestInit): Promise<T> => {
   }
 
   if (!response.ok) {
-    const message =
-      (data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string"
+    const serverMessage =
+      data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string"
         ? (data as { error: string }).error
-        : null) || `Request failed (${response.status} ${response.statusText}).`;
-    throw new Error(message);
+        : null;
+    // HTTP/2 responses carry no statusText, so fall back to a description of the
+    // status code rather than rendering an empty "Request failed (500 )".
+    const statusText =
+      response.statusText || (response.status >= 500 ? "Server error" : "Request error");
+    throw new Error(serverMessage || `Request failed (${response.status} ${statusText}).`);
   }
 
   if (data === null) throw new Error("The server returned an empty or invalid response.");
