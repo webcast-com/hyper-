@@ -87,9 +87,30 @@ const api = async <T,>(url: string, options?: RequestInit): Promise<T> => {
     ...options,
     headers: { "Content-Type": "application/json", ...(options?.headers || {}) }
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "Something went wrong.");
-  return data;
+
+  // A crashed route (or a proxy/gateway error) replies with an empty body or HTML,
+  // not JSON. Parsing that directly throws "Unexpected end of JSON input", which
+  // hides the real status code from the user. Read as text and parse defensively.
+  const raw = await response.text();
+  let data: unknown = null;
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      (data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string"
+        ? (data as { error: string }).error
+        : null) || `Request failed (${response.status} ${response.statusText}).`;
+    throw new Error(message);
+  }
+
+  if (data === null) throw new Error("The server returned an empty or invalid response.");
+  return data as T;
 };
 
 function notificationText(notification: Notification) {
