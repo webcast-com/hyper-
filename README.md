@@ -60,7 +60,7 @@ Open http://localhost:3000
 `.env.example` defaults to:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://creator:creator_password_change_me@localhost:5432/creator_connect?schema=public"
 DATA_DRIVER="prisma"
 ```
 
@@ -140,17 +140,23 @@ curl -X POST -H "x-cron-secret: $CRON_SECRET" http://localhost:3000/api/admin/ma
 npm run db:setup
 ```
 
-For production Postgres, use the dedicated schema and migrations:
+For production Postgres, the default schema (`prisma/schema.prisma`) is already Postgres, so just run the migrations:
 
 ```bash
-npm run prisma:generate:postgres
+npm run prisma:generate
 npm run migrate:deploy
 ```
 
-Production schema:
+Default (Postgres) schema:
 
 ```text
-prisma/schema.postgres.prisma
+prisma/schema.prisma
+```
+
+Optional local-only SQLite schema:
+
+```text
+prisma/schema.sqlite.prisma
 ```
 
 Initial Postgres migration:
