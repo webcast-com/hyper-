@@ -1,12 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
-import { findUserByIdPrisma } from "./prisma-direct-auth";
-import { readPrismaDb, writePrismaDb } from "./prisma-store";
+import { isJsonDriver } from "./data-driver";
 import type { AuthToken, FeatureFlag, ModerationRule, ModerationFlag, Challenge, ChallengeEntry, Conversation, Database, Event, FriendRequest, Group, MarketplaceInquiry, MarketplaceListing, MediaAsset, Message, Notification, NotificationDigest, Post, PostVisibility, ReactionType, Referral, Report, SafeUser, Story, User } from "./types";
 
 const dbPath = path.join(process.cwd(), "data", "db.json");
-const usePrismaRuntime = () => process.env.DATA_DRIVER !== "json";
+const usePrismaRuntime = () => !isJsonDriver();
 let writeQueue = Promise.resolve();
 
 function now() {
@@ -234,7 +233,10 @@ async function ensureDb() {
 }
 
 export async function readDb(): Promise<Database> {
-  if (usePrismaRuntime()) return readPrismaDb();
+  if (usePrismaRuntime()) {
+    const { readPrismaDb } = await import("./prisma-store");
+    return readPrismaDb();
+  }
   await ensureDb();
   const raw = await fs.readFile(dbPath, "utf8");
   const db = JSON.parse(raw) as Database;
@@ -287,9 +289,9 @@ export async function readDb(): Promise<Database> {
 
 export async function writeDb(db: Database) {
   if (usePrismaRuntime()) {
-    writeQueue = writeQueue.then(() => writePrismaDb(db));
-    await writeQueue;
-    return;
+    throw new Error(
+      "Refusing to wipe-and-rewrite the Prisma database via writeDb(). Use direct Prisma helpers, or the seed/import scripts that call writePrismaDb() explicitly."
+    );
   }
   await fs.mkdir(path.dirname(dbPath), { recursive: true });
   writeQueue = writeQueue.then(() => fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8"));
@@ -304,7 +306,10 @@ export async function updateDb<T>(mutator: (db: Database) => T | Promise<T>) {
 }
 
 export async function findUserById(userId: string) {
-  if (usePrismaRuntime()) return findUserByIdPrisma(userId);
+  if (usePrismaRuntime()) {
+    const { findUserByIdPrisma } = await import("./prisma-direct-auth");
+    return findUserByIdPrisma(userId);
+  }
   const db = await readDb();
   return db.users.find((user) => user.id === userId) ?? null;
 }

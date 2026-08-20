@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { describeDataBackend, isJsonDriver } from "@/lib/data-driver";
 import { readDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { hasPermission } from "@/lib/permissions";
@@ -10,7 +10,8 @@ export const runtime = "nodejs";
 function envStatus() {
   return {
     nodeEnv: process.env.NODE_ENV || "development",
-    dataDriver: process.env.DATA_DRIVER || "prisma",
+    dataDriver: describeDataBackend().driver,
+    dataStore: describeDataBackend().store,
     databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
     mediaProvider: process.env.MEDIA_PROVIDER || "local",
     mailProvider: process.env.MAIL_PROVIDER || "console",

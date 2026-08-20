@@ -26,6 +26,9 @@ async function main() {
   console.log("Seeding Prisma database from data/db.json...");
 
   await prisma.$transaction(async (tx) => {
+    for (const model of ["challengeEntryVote", "listingSave", "conversationParticipant", "eventAttendee", "groupMember", "commentLike", "postLike", "postTag", "savedPost", "userMute", "userBlock", "friendship", "follow", "notificationDigest"]) {
+      if (tx[model]?.deleteMany) await tx[model].deleteMany();
+    }
     await tx.notification.deleteMany();
     await tx.message.deleteMany();
     await tx.conversation.deleteMany();

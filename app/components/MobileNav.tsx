@@ -35,9 +35,9 @@ export default function MobileNav() {
       {user ? (
         <Link href="/messages" className="mobile-nav-badge-wrap"><span>✉</span><small>Messages</small>{unread > 0 && <b>{unread}</b>}</Link>
       ) : (
-        <Link href="/#join"><span>＋</span><small>Join</small></Link>
+        <Link href="/login?mode=signup"><span>＋</span><small>Join</small></Link>
       )}
-      <Link href={user ? `/u/${user.username}` : "/#join"}><span>◉</span><small>{user ? "Profile" : "Login"}</small></Link>
+      <Link href={user ? `/u/${user.username}` : "/login"}><span>◉</span><small>{user ? "Profile" : "Login"}</small></Link>
     </nav>
   );
 }

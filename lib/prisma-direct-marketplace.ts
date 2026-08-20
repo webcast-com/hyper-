@@ -1,4 +1,5 @@
 import { id } from "./db";
+import { syncConversationGraphSafe, syncListingGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import type { MarketplaceListing, MarketplaceListingType, User } from "./types";
@@ -123,6 +124,7 @@ export async function toggleMarketplaceSavePrisma(listingId: string, userId: str
   const saves = parse<string[]>(listing.saves, []);
   const nextSaves = saves.includes(userId) ? saves.filter((id) => id !== userId) : [...saves, userId];
   const updated = await db.marketplaceListing.update({ where: { id: listingId }, data: { saves: json(nextSaves, []) } });
+  await syncListingGraphSafe(db, listingId);
   const seller = await db.user.findUnique({ where: { id: updated.sellerId } });
   const users = seller ? [prismaUserToUser(seller)] : [];
   return publicListing(mapListing(updated), users, userId);
@@ -174,6 +176,7 @@ export async function inquireMarketplacePrisma({ listingId, buyer, message }: { 
     if (seller.settings.notifyMessages) {
       await tx.notification.create({ data: { id: id("notif"), recipientId: seller.id, actorId: buyer.id, type: "message", read: false, createdAt: now } });
     }
+    await syncConversationGraphSafe(tx, conversation.id);
     return inquiry;
   });
 

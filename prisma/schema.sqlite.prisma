@@ -53,6 +53,26 @@ model User {
   referralsReceived   Referral[]           @relation("InvitedReferrals")
   mediaAssets         MediaAsset[]
   authTokens          AuthToken[]
+  sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[]      @relation("FriendRequestRecipient")
+  auditLogs              AuditLog[]
+  notificationDigests    NotificationDigest[]
+  followingEdges         Follow[]             @relation("Following")
+  followerEdges          Follow[]             @relation("FollowedBy")
+  friendships            Friendship[]         @relation("FriendshipOwner")
+  friendOf               Friendship[]         @relation("FriendshipPeer")
+  blocksIssued           UserBlock[]          @relation("Blocker")
+  blocksReceived         UserBlock[]          @relation("Blocked")
+  mutesIssued            UserMute[]           @relation("Muter")
+  mutesReceived          UserMute[]           @relation("Muted")
+  savedPostRows          SavedPost[]
+  postLikes              PostLike[]
+  commentLikes           CommentLike[]
+  groupMemberships       GroupMember[]
+  eventAttendances       EventAttendee[]
+  conversationLinks      ConversationParticipant[]
+  listingSaves           ListingSave[]
+  challengeVotes         ChallengeEntryVote[]
 
   @@index([username])
   @@index([email])
@@ -79,6 +99,9 @@ model Post {
   event         Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
   comments      Comment[]
   notifications Notification[]
+  likeRows      PostLike[]
+  tagRows       PostTag[]
+  savedBy       SavedPost[]
 
   @@index([authorId])
   @@index([groupId])
@@ -100,6 +123,7 @@ model Comment {
   user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies Comment[] @relation("CommentReplies")
+  likeRows CommentLike[]
 
   @@index([postId])
   @@index([userId])
@@ -132,7 +156,8 @@ model Conversation {
   updatedAt      DateTime @default(now())
   createdAt      DateTime @default(now())
 
-  messages Message[]
+  messages     Message[]
+  participants ConversationParticipant[]
 
   @@index([updatedAt])
 }
@@ -180,8 +205,9 @@ model Group {
   memberIds   String   @default("[]") // JSON user ids
   createdAt   DateTime @default(now())
 
-  owner User   @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
-  posts Post[]
+  owner        User         @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  posts        Post[]
+  memberships  GroupMember[]
 
   @@index([ownerId])
 }
@@ -197,8 +223,9 @@ model Event {
   cover       String
   createdAt   DateTime @default(now())
 
-  host  User   @relation("HostedEvents", fields: [hostId], references: [id], onDelete: Cascade)
-  posts Post[]
+  host       User            @relation("HostedEvents", fields: [hostId], references: [id], onDelete: Cascade)
+  posts      Post[]
+  attendees  EventAttendee[]
 
   @@index([hostId])
   @@index([startsAt])
@@ -232,8 +259,9 @@ model ChallengeEntry {
   votes       String   @default("[]") // JSON user ids
   createdAt   DateTime @default(now())
 
-  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  challenge Challenge            @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  author    User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  voteRows  ChallengeEntryVote[]
 
   @@index([challengeId])
   @@index([authorId])
@@ -256,6 +284,7 @@ model MarketplaceListing {
 
   seller    User                 @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   inquiries MarketplaceInquiry[]
+  saveRows  ListingSave[]
 
   @@index([sellerId])
   @@index([category])
@@ -288,6 +317,9 @@ model FriendRequest {
   status      String   @default("pending")
   createdAt   DateTime @default(now())
   respondedAt DateTime?
+
+  sender    User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("FriendRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([recipientId])
@@ -356,6 +388,8 @@ model AuditLog {
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([actorId])
   @@index([action])
@@ -473,6 +507,8 @@ model NotificationDigest {
   sentAt    DateTime?
   createdAt DateTime @default(now())
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([frequency])
   @@index([status])
@@ -506,4 +542,159 @@ model AdminAlert {
   @@index([severity])
   @@index([status])
   @@index([createdAt])
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+model Friendship {
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("FriendshipOwner", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendshipPeer", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@id([userId, friendId])
+  @@index([friendId])
+}
+
+model UserBlock {
+  userId        String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  user    User @relation("Blocker", fields: [userId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@id([userId, blockedUserId])
+  @@index([blockedUserId])
+}
+
+model UserMute {
+  userId      String
+  mutedUserId String
+  createdAt   DateTime @default(now())
+
+  user  User @relation("Muter", fields: [userId], references: [id], onDelete: Cascade)
+  muted User @relation("Muted", fields: [mutedUserId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mutedUserId])
+  @@index([mutedUserId])
+}
+
+model SavedPost {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model PostLike {
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId])
+}
+
+model CommentLike {
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+  @@index([userId])
+}
+
+model PostTag {
+  postId    String
+  tag       String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tag])
+  @@index([tag])
+}
+
+model GroupMember {
+  groupId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId])
+}
+
+model EventAttendee {
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model ListingSave {
+  listingId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, userId])
+  @@index([userId])
+}
+
+model ChallengeEntryVote {
+  entryId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  entry ChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, userId])
+  @@index([userId])
 }

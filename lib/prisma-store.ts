@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { clearGraphTables, syncAllGraph } from "./graph-relations";
 import { prisma } from "./prisma";
 import type { Challenge, ChallengeEntry, Conversation, Database, Event, Group, MarketplaceInquiry, MarketplaceListing, MediaAsset, FeatureFlag, ModerationRule, ModerationFlag, Notification, NotificationDigest, Post, Referral, Report, Story, User } from "./types";
 
@@ -278,9 +279,12 @@ export async function readPrismaDb(): Promise<Database> {
   };
 }
 
+/** Seed/import only. Live request handlers must not call this — it replaces the whole database. */
 export async function writePrismaDb(snapshot: Database) {
   const db = prisma();
+  await clearGraphTables(db);
   await db.$transaction(async (tx) => {
+    await tx.notificationDigest.deleteMany().catch(() => undefined);
     await tx.notification.deleteMany();
     await tx.message.deleteMany();
     await tx.conversation.deleteMany();
@@ -340,4 +344,5 @@ export async function writePrismaDb(snapshot: Database) {
     for (const flag of snapshot.moderationFlags || []) await tx.moderationFlag.create({ data: { id: flag.id, ruleId: flag.ruleId || null, targetType: flag.targetType, targetId: flag.targetId, actorId: flag.actorId || null, excerpt: flag.excerpt, status: flag.status, createdAt: date(flag.createdAt) }});
     for (const digest of snapshot.notificationDigests || []) await tx.notificationDigest.create({ data: { id: digest.id, userId: digest.userId, frequency: digest.frequency, subject: digest.subject, itemCount: digest.itemCount, status: digest.status, error: digest.error || null, sentAt: digest.sentAt ? date(digest.sentAt) : null, createdAt: date(digest.createdAt) }});
   }, { timeout: 30_000 });
+  await syncAllGraph(db).catch(() => undefined);
 }

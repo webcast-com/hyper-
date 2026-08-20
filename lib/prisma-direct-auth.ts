@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { syncUserGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import type { User } from "./types";
 
@@ -127,6 +128,7 @@ export async function createUserPrisma(input: { name: string; email: string; pas
     return created;
   });
 
+  await syncUserGraphSafe(db, user.id);
   return prismaUserToUser(user);
 }
 

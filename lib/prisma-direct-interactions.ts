@@ -1,4 +1,5 @@
 import { id, canViewPost, isBlockedBetween, publicPost, extractMentionedUsers, reactionTypes } from "./db";
+import { syncCommentGraphSafe, syncPostGraphSafe, syncUserGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import type { Post, ReactionType, User } from "./types";
@@ -95,6 +96,7 @@ export async function likePostPrisma(postId: string, user: User) {
   if (!found) return null;
   const likes = found.post.likes.includes(user.id) ? found.post.likes.filter((x) => x !== user.id) : [...found.post.likes, user.id];
   await prisma().post.update({ where: { id: postId }, data: { likes: json(likes, []) } });
+  await syncPostGraphSafe(prisma(), postId);
   if (!found.post.likes.includes(user.id)) await notify(found.post.authorId, user.id, "like", postId);
   return fullPost(postId, user);
 }
@@ -107,6 +109,7 @@ export async function reactPostPrisma(postId: string, user: User, reaction: Reac
   reactions[reaction] = [...(reactions[reaction] || []), user.id];
   const likes = reaction === "like" && !found.post.likes.includes(user.id) ? [...found.post.likes, user.id] : found.post.likes;
   await prisma().post.update({ where: { id: postId }, data: { reactions: json(reactions, {}), likes: json(likes, []) } });
+  await syncPostGraphSafe(prisma(), postId);
   await notify(found.post.authorId, user.id, "like", postId);
   return fullPost(postId, user);
 }
@@ -129,6 +132,7 @@ export async function savePostPrisma(postId: string, user: User) {
   if (!canViewPost(post, me, users)) throw new Error("You cannot save this post.");
   const saved = me.savedPosts.includes(postId) ? me.savedPosts.filter((id) => id !== postId) : [postId, ...me.savedPosts];
   await db.user.update({ where: { id: user.id }, data: { savedPosts: json(saved, []) } });
+  await syncUserGraphSafe(db, user.id);
   return { post: await fullPost(postId, me), isSaved: saved.includes(postId), savedPosts: saved };
 }
 
@@ -169,6 +173,7 @@ export async function likeCommentPrisma(postId: string, commentId: string, user:
   if (!comment) throw new Error("Comment not found.");
   const likes = comment.likes.includes(user.id) ? comment.likes.filter((id) => id !== user.id) : [...comment.likes, user.id];
   await prisma().comment.update({ where: { id: commentId }, data: { likes: json(likes, []) } });
+  await syncCommentGraphSafe(prisma(), commentId);
   if (!comment.likes.includes(user.id)) await notify(comment.userId, user.id, "like", postId, commentId);
   return fullPost(postId, user);
 }
