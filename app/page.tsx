@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AuthCard from "./components/AuthCard";
 
 type SafeUser = {
   id: string;
@@ -168,8 +169,6 @@ export default function Home() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMorePosts, setHasMorePosts] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
-  const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
-  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "", niche: "Design", inviteCode: "" });
   const [postForm, setPostForm] = useState({ body: "", imageUrl: "", tags: "", visibility: "public", pollQuestion: "", pollOptions: "", pollAllowMultiple: false });
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -234,9 +233,18 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const invite = new URLSearchParams(window.location.search).get("invite") || "";
-    if (invite) setAuthForm((prev) => ({ ...prev, inviteCode: invite.toUpperCase() }));
-    load();
+    const boot = async () => {
+      try {
+        const meData = await api<{ user: SafeUser | null }>("/api/auth/me");
+        setCurrentUser(meData.user);
+        if (meData.user) await load();
+        else setLoading(false);
+      } catch (err) {
+        setToast({ type: "error", text: (err as Error).message });
+        setLoading(false);
+      }
+    };
+    boot();
   }, []);
 
   useEffect(() => {
@@ -297,22 +305,6 @@ export default function Home() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [hasMorePosts, nextCursor, loading, loadingMore, feedMode]);
-
-  const submitAuth = async (event: FormEvent) => {
-    event.preventDefault();
-    setToast(null);
-    try {
-      const url = authMode === "signup" ? "/api/auth/register" : "/api/auth/login";
-      const payload = authMode === "signup" ? authForm : { email: authForm.email, password: authForm.password };
-      const data = await api<{ user: SafeUser }>(url, { method: "POST", body: JSON.stringify(payload) });
-      setCurrentUser(data.user);
-      setProfileForm({ name: data.user.name, bio: data.user.bio, niche: data.user.niche, website: data.user.website || "", avatar: data.user.avatar });
-      setToast({ type: "success", text: authMode === "signup" ? "Welcome to Creator Connect!" : "You are signed in." });
-      await load();
-    } catch (err) {
-      setToast({ type: "error", text: (err as Error).message });
-    }
-  };
 
   const logout = async () => {
     await api("/api/auth/logout", { method: "POST" });
@@ -571,93 +563,74 @@ export default function Home() {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <main className="landing-page" id="top">
+        {loading ? (
+          <div className="shell page-wrap"><div className="empty">Loading…</div></div>
+        ) : (
+          <section className="shell hero landing-hero">
+            <div className="hero-copy">
+              <span className="eyebrow">Creator Connect</span>
+              <h1><span className="gradient-text">Connect with creators</span><br />around you.</h1>
+              <p className="lead">
+                A home for posting, stories, groups, events, and marketplace — sign in to open your feed.
+              </p>
+              <div className="row">
+                <Link className="btn" href="/login?mode=signup">Sign up</Link>
+                <Link className="btn secondary" href="/login">Log in</Link>
+                <Link className="btn ghost" href="/explore">Explore without an account</Link>
+              </div>
+              {toast && <p className={toast.type === "error" ? "error" : "success"}>{toast.text}</p>}
+            </div>
+            <AuthCard />
+          </section>
+        )}
+      </main>
+    );
+  }
+
   return (
     <>
-      <header className="topbar">
-        <nav className="shell nav">
-          <a className="brand" href="#top" aria-label="Creator Connect home">
-            <span className="logo">✦</span>
-            <span>Creator Connect</span>
-          </a>
-          <div className="nav-actions">
-            <a className="btn ghost small" href="#feed">Feed</a>
-            <Link className="btn ghost small" href="/explore">Explore</Link>
-            <Link className="btn ghost small" href="/search">Search</Link>
-            {currentUser && <Link className="btn ghost small" href="/analytics">Analytics</Link>}
-            {currentUser && <Link className="btn ghost small" href="/invite">Invite</Link>}
-            {currentUser && <Link className="btn ghost small" href="/saved">Saved</Link>}
-            {currentUser && <Link className="btn ghost small" href="/settings">Settings</Link>}
-            {currentUser && <Link className="btn ghost small" href="/challenges">Challenges</Link>}
-            <Link className="btn ghost small" href="/marketplace">Marketplace</Link>
-            {currentUser?.isAdmin && <Link className="btn ghost small" href="/admin">Admin</Link>}
-            {currentUser && <a className="btn ghost small" href="#friends">Friends{friendData.incoming.length > 0 && <span className="badge">{friendData.incoming.length}</span>}</a>}
-            {currentUser && <Link className="btn ghost small notification-link" href="/messages">Messages{messageUnreadCount > 0 && <span className="badge">{messageUnreadCount}</span>}</Link>}
-            <a className="btn ghost small" href="#discover">Discover</a>
-            {currentUser && <a className="btn ghost small notification-link" href="#notifications">Notifications{unreadCount > 0 && <span className="badge">{unreadCount}</span>}</a>}
-            {currentUser ? (
-              <>
-                <Link className="user-chip" href={`/u/${currentUser.username}`}><img className="avatar-sm" src={currentUser.avatar} alt="" /> @{currentUser.username}</Link>
-                <button className="btn secondary small" onClick={logout}>Logout</button>
-              </>
-            ) : (
-              <a className="btn small" href="#join">Join free</a>
+      <main id="top">
+        <section className="fb-layout">
+          <aside className="fb-left">
+            {currentUser && (
+              <Link className="fb-nav-item" href={`/u/${currentUser.username}`}>
+                <img className="avatar-sm" src={currentUser.avatar} alt="" />
+                <strong>{currentUser.name}</strong>
+              </Link>
             )}
-          </div>
-        </nav>
-      </header>
-
-      <main id="top" className="shell">
-        <section className="hero">
-          <div className="hero-copy">
-            <span className="eyebrow">✨ Built for creators, not endless scrolling</span>
-            <h1><span className="gradient-text">Share your craft.</span><br />Grow your circle.</h1>
-            <p className="lead">
-              A full-stack MVP for creator communities: profiles, posting, likes, comments, follows, and discovery in one clean Next.js app.
-            </p>
-            <div className="stats">
-              <div className="stat"><strong>{stats.creators}</strong><span>creators</span></div>
-              <div className="stat"><strong>{stats.posts}</strong><span>posts</span></div>
-              <div className="stat"><strong>{stats.engagement}</strong><span>engagements</span></div>
-            </div>
-          </div>
-
-          <aside id="join" className="auth-card">
-            {currentUser ? (
-              <form className="form" onSubmit={updateProfile}>
-                <div className="split"><h3>Creator profile</h3><span className="muted">Edit live</span></div>
+            <a className="fb-nav-item" href="#feed"><span>⌂</span> Feed</a>
+            <a className="fb-nav-item" href="#friends"><span>👥</span> Friends{friendData.incoming.length > 0 && <span className="badge">{friendData.incoming.length}</span>}</a>
+            <Link className="fb-nav-item" href="/messages"><span>✉</span> Messages{messageUnreadCount > 0 && <span className="badge">{messageUnreadCount}</span>}</Link>
+            <Link className="fb-nav-item" href="/marketplace"><span>▣</span> Marketplace</Link>
+            <Link className="fb-nav-item" href="/explore"><span>▶</span> Explore</Link>
+            <Link className="fb-nav-item" href="/saved"><span>🔖</span> Saved</Link>
+            <Link className="fb-nav-item" href="/groups/grp_design"><span>👥</span> Groups</Link>
+            <Link className="fb-nav-item" href="/events/evt_walk"><span>📅</span> Events</Link>
+            <Link className="fb-nav-item" href="/challenges"><span>🏁</span> Challenges</Link>
+            <Link className="fb-nav-item" href="/analytics"><span>📊</span> Analytics</Link>
+            <Link className="fb-nav-item" href="/invite"><span>📨</span> Invite</Link>
+            <Link className="fb-nav-item" href="/settings"><span>⚙️</span> Settings</Link>
+            <Link className="fb-nav-item" href="/search"><span>⌕</span> Search</Link>
+            {currentUser?.isAdmin && <Link className="fb-nav-item" href="/admin"><span>🛡️</span> Admin</Link>}
+            {currentUser && (
+              <form className="card form" onSubmit={updateProfile}>
+                <h3>Edit profile</h3>
                 <input className="input" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} placeholder="Name" />
                 <input className="input" value={profileForm.niche} onChange={(e) => setProfileForm({ ...profileForm, niche: e.target.value })} placeholder="Niche" />
                 <textarea className="textarea" value={profileForm.bio} onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })} placeholder="Bio" />
                 <input className="input" value={profileForm.website} onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })} placeholder="Website" />
                 <input className="input" value={profileForm.avatar} onChange={(e) => setProfileForm({ ...profileForm, avatar: e.target.value })} placeholder="Avatar URL" />
                 <button className="btn" type="submit">Save profile</button>
-              </form>
-            ) : (
-              <form className="form" onSubmit={submitAuth}>
-                <div className="tabs">
-                  <button type="button" className={`tab ${authMode === "signup" ? "active" : ""}`} onClick={() => setAuthMode("signup")}>Sign up</button>
-                  <button type="button" className={`tab ${authMode === "login" ? "active" : ""}`} onClick={() => setAuthMode("login")}>Log in</button>
-                </div>
-                {authMode === "signup" && (
-                  <>
-                    <input className="input" value={authForm.name} onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })} placeholder="Creator name" required />
-                    <input className="input" value={authForm.niche} onChange={(e) => setAuthForm({ ...authForm, niche: e.target.value })} placeholder="Niche e.g. Music, Design" />
-                    <input className="input" value={authForm.inviteCode} onChange={(e) => setAuthForm({ ...authForm, inviteCode: e.target.value.toUpperCase() })} placeholder="Optional invite code" />
-                  </>
-                )}
-                <input className="input" type="email" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} placeholder="Email" required />
-                <input className="input" type="password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} placeholder="Password" required minLength={6} />
-                <button className="btn" type="submit">{authMode === "signup" ? "Create account" : "Log in"}</button>
-                <p className="muted">Tip: seeded accounts are discoverable, but create a new account to post and follow.</p>
-                <Link className="inline-link" href="/forgot-password">Forgot password?</Link>
+                <button className="btn secondary" type="button" onClick={logout}>Log out</button>
               </form>
             )}
-            {toast && <p className={toast.type === "error" ? "error" : "success"}>{toast.text}</p>}
           </aside>
-        </section>
 
-        <section className="main-grid">
-          <div id="feed" className="stack">
+          <div id="feed" className="fb-center">
+            {currentUser && toast && <p className={toast.type === "error" ? "error" : "success"}>{toast.text}</p>}
             <section className="stories card">
               <div className="split"><h3>Stories</h3><span className="muted">24-hour updates</span></div>
               <div className="story-row">
@@ -694,7 +667,7 @@ export default function Home() {
                 </div>
               </div>
               <div style={{ height: 12 }} />
-              <textarea className="textarea" value={postForm.body} onChange={(e) => setPostForm({ ...postForm, body: e.target.value })} placeholder="What are you creating today?" disabled={!currentUser} />
+              <textarea className="textarea" value={postForm.body} onChange={(e) => setPostForm({ ...postForm, body: e.target.value })} placeholder={currentUser ? `What's on your mind, ${currentUser.name.split(" ")[0]}?` : "What's on your mind?"} disabled={!currentUser} />
               <details className="poll-builder">
                 <summary>Create a poll</summary>
                 <input className="input" value={postForm.pollQuestion} onChange={(e) => setPostForm({ ...postForm, pollQuestion: e.target.value })} placeholder="Poll question" disabled={!currentUser || isPublishing} />
@@ -783,7 +756,7 @@ export default function Home() {
             {!loading && !hasMorePosts && posts.length > 0 && <div className="empty compact">You are all caught up in this feed.</div>}
           </div>
 
-          <aside className="sidebar">
+          <aside className="fb-right">
             {currentUser && (
               <section className="card">
                 <div className="split"><h3>Safety controls</h3><span className="muted">Mute & block</span></div>

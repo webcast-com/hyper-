@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import FacebookChrome from "./components/FacebookChrome";
 import MobileNav from "./components/MobileNav";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import "./globals.css";
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <FacebookChrome />
         {children}
         <MobileNav />
         <ServiceWorkerRegistration />

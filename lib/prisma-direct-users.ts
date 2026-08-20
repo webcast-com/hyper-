@@ -1,4 +1,5 @@
 import { id, canViewPost, isBlockedBetween, publicPost } from "./db";
+import { syncUserGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import type { MessagePermission, Post, PostVisibility, User } from "./types";
@@ -60,6 +61,7 @@ export async function toggleFollowPrisma(currentUser: User, targetId: string) {
     db.user.update({ where: { id: me.id }, data: { following: json(nextFollowing, []) } }),
     db.user.update({ where: { id: target.id }, data: { followers: json(nextFollowers, []) } })
   ]);
+  await Promise.all([syncUserGraphSafe(db, me.id), syncUserGraphSafe(db, target.id)]);
   if (!following) await notification(target.id, me.id, "follow");
   return { user: toSafeUser({ ...target, followers: nextFollowers }), isFollowing: !following };
 }
@@ -108,6 +110,7 @@ export async function respondFriendRequestPrisma(user: User, requestId: string, 
       db.user.update({ where: { id: sender.id }, data: { friends: json(senderFriends, []) } }),
       db.user.update({ where: { id: recipient.id }, data: { friends: json(recipientFriends, []) } })
     ]);
+    await Promise.all([syncUserGraphSafe(db, sender.id), syncUserGraphSafe(db, recipient.id)]);
     await notification(sender.id, recipient.id, "friend_accept");
   }
   return publicFriendRequest(updated, [sender, recipient]);
@@ -122,6 +125,7 @@ export async function removeFriendPrisma(user: User, friendId: string) {
     db.user.update({ where: { id: me.id }, data: { friends: json(me.friends.filter((id) => id !== friendId), []) } }),
     db.user.update({ where: { id: friend.id }, data: { friends: json(friend.friends.filter((id) => id !== me.id), []) } })
   ]);
+  await Promise.all([syncUserGraphSafe(db, me.id), syncUserGraphSafe(db, friend.id)]);
   return true;
 }
 
@@ -144,6 +148,7 @@ export async function toggleMutePrisma(user: User, targetId: string) {
   const muted = user.mutedUsers.includes(targetId);
   const next = muted ? user.mutedUsers.filter((id) => id !== targetId) : [...user.mutedUsers, targetId];
   await prisma().user.update({ where: { id: user.id }, data: { mutedUsers: json(next, []) } });
+  await syncUserGraphSafe(prisma(), user.id);
   return { muted: !muted, blocked: false };
 }
 
@@ -162,6 +167,7 @@ export async function toggleBlockPrisma(user: User, targetId: string) {
     db.user.update({ where: { id: targetId }, data: { friends: json(target.friends.filter((id) => id !== user.id), []), followers: json(target.followers.filter((id) => id !== user.id), []) } }),
     db.friendRequest.deleteMany({ where: { OR: [{ senderId: user.id, recipientId: targetId }, { senderId: targetId, recipientId: user.id }] } })
   ]);
+  await Promise.all([syncUserGraphSafe(db, user.id), syncUserGraphSafe(db, targetId)]);
   return { blocked: true };
 }
 

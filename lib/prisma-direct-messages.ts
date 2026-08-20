@@ -1,3 +1,4 @@
+import { syncConversationGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import { id, isBlockedBetween } from "./db";
@@ -116,6 +117,7 @@ export async function sendMessagePrisma({ sender, recipientId, text }: { sender:
       data: { id: id("conv"), participantIds: json([sender.id, recipientId], []), createdAt: now, updatedAt: now },
       include: { messages: true }
     });
+    await syncConversationGraphSafe(db, conversation.id);
   }
 
   await db.message.create({

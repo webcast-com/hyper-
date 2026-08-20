@@ -1,4 +1,5 @@
 import { id } from "./db";
+import { syncChallengeEntryGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import type { Challenge, ChallengeEntry, User } from "./types";
@@ -138,6 +139,7 @@ export async function voteChallengeEntryPrisma(challengeId: string, entryId: str
   const votes = parse<string[]>(rawEntry.votes, []);
   const nextVotes = votes.includes(user.id) ? votes.filter((id) => id !== user.id) : [...votes, user.id];
   const updated = await db.challengeEntry.update({ where: { id: entryId }, data: { votes: json(nextVotes, []) } });
+  await syncChallengeEntryGraphSafe(db, entryId);
   const author = await db.user.findUnique({ where: { id: updated.authorId } });
   const users = [user, ...(author ? [prismaUserToUser(author)] : [])];
   return publicEntry(mapEntry(updated), users, user.id);

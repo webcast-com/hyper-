@@ -1,4 +1,5 @@
 import { id } from "./db";
+import { syncEventGraphSafe, syncGroupGraphSafe, syncPostGraphSafe } from "./graph-relations";
 import { prisma } from "./prisma";
 import { prismaUserToUser } from "./prisma-direct-auth";
 import { canViewPost, publicEvent, publicGroup, publicPost } from "./db";
@@ -63,6 +64,7 @@ export async function createGroupPrisma(user: User, input: { name: string; descr
       memberIds: json([user.id], [])
     }
   });
+  await syncGroupGraphSafe(prisma(), created.id);
   return publicGroup(mapGroup(created), [user], user.id);
 }
 
@@ -90,6 +92,7 @@ export async function toggleGroupJoinPrisma(groupId: string, user: User) {
   const memberIds = parse<string[]>(rawGroup.memberIds, []);
   const next = memberIds.includes(user.id) ? memberIds.filter((id) => id !== user.id) : [...memberIds, user.id];
   const updated = await db.group.update({ where: { id: groupId }, data: { memberIds: json(next, []) } });
+  await syncGroupGraphSafe(db, groupId);
   return publicGroup(mapGroup(updated), [user], user.id);
 }
 
@@ -105,6 +108,7 @@ export async function createGroupPostPrisma(groupId: string, user: User, input: 
     },
     include: { comments: true }
   });
+  await syncPostGraphSafe(db, created.id);
   return publicPost(mapPost(created), [user], [group], []);
 }
 
@@ -119,6 +123,7 @@ export async function createEventPrisma(user: User, input: { title: string; desc
   const created = await prisma().event.create({
     data: { id: id("evt"), title: input.title, description: input.description, location: input.location, startsAt: new Date(input.startsAt), hostId: user.id, attendeeIds: json([user.id], []), cover: "linear-gradient(135deg,#16a34a,#0ea5e9)" }
   });
+  await syncEventGraphSafe(prisma(), created.id);
   return publicEvent(mapEvent(created), [user], user.id);
 }
 
@@ -161,5 +166,6 @@ export async function createEventPostPrisma(eventId: string, user: User, input: 
     },
     include: { comments: true }
   });
+  await syncPostGraphSafe(db, created.id);
   return publicPost(mapPost(created), [user], [], [event]);
 }

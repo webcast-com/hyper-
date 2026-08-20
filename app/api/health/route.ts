@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { describeDataBackend, isJsonDriver } from "@/lib/data-driver";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const startedAt = Date.now();
+  const backend = describeDataBackend();
   const checks: Record<string, unknown> = {
     app: "ok",
-    dataDriver: process.env.DATA_DRIVER || "prisma",
+    dataDriver: backend.driver,
+    dataStore: backend.store,
     nodeEnv: process.env.NODE_ENV || "development"
   };
 
   try {
-    if (process.env.DATA_DRIVER !== "json") {
+    if (!isJsonDriver()) {
+      const { prisma } = await import("@/lib/prisma");
       await prisma().$queryRaw`SELECT 1`;
       checks.database = "ok";
     } else {

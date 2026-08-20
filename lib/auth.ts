@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import { findUserById, readDb, toSafeUser } from "./db";
-import { uniqueUsernamePrisma } from "./prisma-direct-auth";
+import { isJsonDriver } from "./data-driver";
 import type { SafeUser, User } from "./types";
 
 const COOKIE_NAME = "creator_session";
@@ -118,7 +118,10 @@ export async function getCurrentSafeUser(): Promise<SafeUser | null> {
 }
 
 export async function uniqueUsername(base: string) {
-  if (process.env.DATA_DRIVER !== "json") return uniqueUsernamePrisma(base);
+  if (!isJsonDriver()) {
+    const { uniqueUsernamePrisma } = await import("./prisma-direct-auth");
+    return uniqueUsernamePrisma(base);
+  }
   const db = await readDb();
   const clean = base.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 18) || "creator";
   let candidate = clean;

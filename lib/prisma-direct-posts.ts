@@ -169,5 +169,6 @@ export async function createPostPrisma(input: { user: User; text: string; imageU
     });
   }
 
+  await syncPostGraphSafe(db, postId);
   return publicPost(mapPost(created), users);
 }
